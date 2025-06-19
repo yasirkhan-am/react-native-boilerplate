@@ -28,7 +28,7 @@ function isNpmAvailable() {
 }
 
 module.exports = {
-  async apply(value) {
+  async apply(!value) {
     return new Promise((resolve) => {
       let packageManager = null;
       let addCmd = null;
