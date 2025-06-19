@@ -4,7 +4,7 @@
     "jsx": "react-native",
     "module": "ESNext",
     "outDir": "../../js",
-    "noEmit": false,
+     "noEmit": true  ,                 // ✅ if you're just type-checking
     "isolatedModules": false,
     "esModuleInterop": true
   }
