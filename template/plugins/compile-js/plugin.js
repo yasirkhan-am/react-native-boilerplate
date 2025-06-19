@@ -1,30 +1,35 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable no-console */
 const { execSync, spawnSync } = require('node:child_process');
+const os = require('os');
 
+const isWindows = os.platform() === 'win32';
 const TYPESCRIPT_VERSION = '5.6.3';
 
 function isYarnAvailable() {
   try {
-    return !!(
-      execSync('yarn --version', {
-        stdio: [0, 'pipe', 'ignore'],
-      }).toString() || ''
-    ).trim();
+    execSync(isWindows ? 'yarn.cmd --version' : 'yarn --version', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return true;
   } catch {
-    return null;
+    return false;
   }
 }
+
 function isNpmAvailable() {
   try {
-    return !!(
-      execSync('npm --version', {
-        stdio: [0, 'pipe', 'ignore'],
-      }).toString() || ''
-    ).trim();
+    execSync(isWindows ? 'npm.cmd --version' : 'npm --version', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    return true;
   } catch {
-    return null;
+    return false;
   }
+}
+
+function getNpxCommand() {
+  return isWindows ? 'npx.cmd' : 'npx';
 }
 
 module.exports = {
@@ -33,32 +38,31 @@ module.exports = {
       let packageManager = null;
       let addCmd = null;
 
-      // react-native cli prefer yarn so we follow the same logic
+      // Detect preferred package manager
       if (isYarnAvailable()) {
-        packageManager = 'yarn';
+        packageManager = isWindows ? 'yarn.cmd' : 'yarn';
         addCmd = 'add';
       } else if (isNpmAvailable()) {
-        packageManager = 'npm';
+        packageManager = isWindows ? 'npm.cmd' : 'npm';
         addCmd = 'install';
       }
-      
+
       if (!packageManager) {
-        console.error(
-          '🚨 No package manager found. Please install yarn or npm.',
-        );
+        console.error('🚨 No package manager found. Please install yarn or npm.');
         process.exit(1);
       }
-      
-      console.log("🚀 ~ returnnewPromise ~ packageManager:", packageManager)
-      if (!value) {
-        console.log('\n');
 
-        console.log('📦 Loading the build tool...');
+      console.log("🚀 ~ Using package manager:", packageManager);
+
+      if (!value) {
+        console.log('\n📦 Loading the build tool...');
+
         const installTypeScriptCmd = spawnSync(
           packageManager,
           [addCmd, '-D', `typescript@${TYPESCRIPT_VERSION}`],
-          { stdio: 'inherit' },
+          { stdio: 'inherit', shell: isWindows },
         );
+
         if (installTypeScriptCmd.error) {
           console.error(installTypeScriptCmd.error);
           process.exit(1);
@@ -66,10 +70,11 @@ module.exports = {
 
         console.log('🧱 Building the javascript source...');
         const transpileCmd = spawnSync(
-          'npx',
-          ['tsc', '--project', `plugins/compile-js/tsconfig.build.json`],
-          { stdio: 'inherit' },
+          getNpxCommand(),
+          ['tsc', '--project', 'plugins/compile-js/tsconfig.build.json'],
+          { stdio: 'inherit', shell: isWindows },
         );
+
         if (transpileCmd.error) {
           console.error(transpileCmd.error);
           process.exit(1);
@@ -85,10 +90,11 @@ module.exports = {
           execSync('rm -rf __mocks__', { stdio: 'pipe' });
           execSync('cp -R js/__mocks__ ./__mocks__', { stdio: 'pipe' });
           execSync('rm -rf js', { stdio: 'pipe' });
-        } catch {
+        } catch (err) {
           console.error(
-            '🚨 Failed to copy assets or replace source. If you are using windows, please use git bash.',
+            '🚨 Failed to copy assets or replace source. If you are using Windows, please use Git Bash.',
           );
+          console.error(err);
           process.exit(1);
         }
 
