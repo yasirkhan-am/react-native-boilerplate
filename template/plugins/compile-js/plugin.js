@@ -41,9 +41,12 @@ function ensureDirExists(dirPath) {
 }
 
 function copyDirRecursive(src, dest) {
-  if (!fs.existsSync(src)) return;
-  if (!fs.existsSync(dest)) ensureDirExists(dest);
+  if (!fs.existsSync(src)) {
+    console.warn(`⚠️  Source not found: ${src}`);
+    return;
+  }
 
+  ensureDirExists(dest);
   const entries = fs.readdirSync(src, { withFileTypes: true });
 
   for (let entry of entries) {
@@ -55,6 +58,12 @@ function copyDirRecursive(src, dest) {
     } else {
       fs.copyFileSync(srcPath, destPath);
     }
+  }
+}
+
+function deleteDirRecursive(dirPath) {
+  if (fs.existsSync(dirPath)) {
+    fs.rmSync(dirPath, { recursive: true, force: true });
   }
 }
 
@@ -107,16 +116,16 @@ module.exports = {
 
         try {
           console.log('🖼️  Copying assets...');
-          const sourceAssets = path.join('src', 'theme', 'assets', 'images');
-          const targetAssets = path.join('js', 'src', 'theme', 'assets', 'images');
-          copyDirRecursive(sourceAssets, targetAssets);
+          copyDirRecursive('src/theme/assets/images', 'js/src/theme/assets/images');
 
           console.log('♻️  Replacing source...');
-          execSync('rm -rf src', { stdio: 'pipe' });
-          execSync('cp -R js/src ./src', { stdio: 'pipe' });
-          execSync('rm -rf __mocks__', { stdio: 'pipe' });
-          execSync('cp -R js/__mocks__ ./__mocks__', { stdio: 'pipe' });
-          execSync('rm -rf js', { stdio: 'pipe' });
+          deleteDirRecursive('src');
+          copyDirRecursive('js/src', './src');
+
+          deleteDirRecursive('__mocks__');
+          copyDirRecursive('js/__mocks__', './__mocks__');
+
+          deleteDirRecursive('js');
         } catch (err) {
           console.error(
             '🚨 Failed to copy assets or replace source. If you are using Windows, please use Git Bash.',
@@ -126,9 +135,13 @@ module.exports = {
         }
 
         console.log('🌀 Removing types ...');
-        execSync('rm -rf src/theme/types', { stdio: 'pipe' });
-        execSync('rm -f src/navigation/paths.js', { stdio: 'pipe' });
-        execSync('rm -f src/navigation/types.js', { stdio: 'pipe' });
+        deleteDirRecursive('src/theme/types');
+        try {
+          fs.unlinkSync('src/navigation/paths.js');
+        } catch {}
+        try {
+          fs.unlinkSync('src/navigation/types.js');
+        } catch {}
       }
 
       resolve();
