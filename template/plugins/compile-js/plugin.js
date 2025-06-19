@@ -15,7 +15,6 @@ function isYarnAvailable() {
     return null;
   }
 }
-
 function isNpmAvailable() {
   try {
     return !!(
@@ -28,18 +27,13 @@ function isNpmAvailable() {
   }
 }
 
-function getSafeCommand(cmd) {
-  // Fix spawnSync issues on Windows
-  return process.platform === 'win32' ? `${cmd}.cmd` : cmd;
-}
-
 module.exports = {
   async apply(value) {
     return new Promise((resolve) => {
       let packageManager = null;
       let addCmd = null;
 
-      // Prefer yarn, fallback to npm
+      // react-native cli prefer yarn so we follow the same logic
       if (isYarnAvailable()) {
         packageManager = 'yarn';
         addCmd = 'add';
@@ -49,70 +43,59 @@ module.exports = {
       }
 
       if (!packageManager) {
-        console.error('🚨 No package manager found. Please install yarn or npm.');
+        console.error(
+          '🚨 No package manager found. Please install yarn or npm.',
+        );
         process.exit(1);
       }
 
-      // If the user chose JavaScript
-      if (!value) {
-        console.log('\n🧪 JavaScript selected — skipping TypeScript install');
+      if (value) {
+        console.log('\n');
 
-        try {
-          console.log('📁 Copying JS source files...');
-          execSync('cp -R js/src ./src', { stdio: 'pipe' });
-          execSync('cp -R js/__mocks__ ./__mocks__', { stdio: 'pipe' });
-          execSync('rm -rf js', { stdio: 'pipe' });
-        } catch {
-          console.error('🚨 Failed to copy JS source files. Use Git Bash on Windows.');
+        console.log('📦 Loading the build tool...');
+        const installTypeScriptCmd = spawnSync(
+          packageManager,
+          [addCmd, '-D', `typescript@${TYPESCRIPT_VERSION}`],
+          { stdio: 'inherit' },
+        );
+        if (installTypeScriptCmd.error) {
+          console.error(installTypeScriptCmd.error);s
           process.exit(1);
         }
 
-        return resolve();
+        console.log('🧱 Building the javascript source...');
+        const transpileCmd = spawnSync(
+          'npx',
+          ['tsc', '--project', `plugins/compile-js/tsconfig.build.json`],
+          { stdio: 'inherit' },
+        );
+        if (transpileCmd.error) {
+          console.error(transpileCmd.error);
+          process.exit(1);
+        }
+
+        try {
+          console.log('🖼️  Copying assets...');
+          execSync('cp -R src/theme/assets/images js/src/theme/assets/images');
+
+          console.log('♻️  Replacing source...');
+          execSync('rm -rf src', { stdio: 'pipe' });
+          execSync('cp -R js/src ./src', { stdio: 'pipe' });
+          execSync('rm -rf __mocks__', { stdio: 'pipe' });
+          execSync('cp -R js/__mocks__ ./__mocks__', { stdio: 'pipe' });
+          execSync('rm -rf js', { stdio: 'pipe' });
+        } catch {
+          console.error(
+            '🚨 Failed to copy assets or replace source. If you are using windows, please use git bash.',
+          );
+          process.exit(1);
+        }
+
+        console.log('🌀 Removing types ...');
+        execSync('rm -rf src/theme/types', { stdio: 'pipe' });
+        execSync('rm -f src/navigation/paths.js', { stdio: 'pipe' });
+        execSync('rm -f src/navigation/types.js', { stdio: 'pipe' });
       }
-
-      // If the user chose TypeScript
-      console.log('\n📦 Loading the build tool...');
-      const installTypeScriptCmd = spawnSync(
-        getSafeCommand(packageManager),
-        [addCmd, '-D', `typescript@${TYPESCRIPT_VERSION}`],
-        { stdio: 'inherit' },
-      );
-      if (installTypeScriptCmd.error) {
-        console.error(installTypeScriptCmd.error);
-        process.exit(1);
-      }
-
-      console.log('🧱 Building the JavaScript source (from TS)...');
-      const transpileCmd = spawnSync(
-        getSafeCommand('npx'),
-        ['tsc', '--project', 'plugins/compile-js/tsconfig.build.json'],
-        { stdio: 'inherit' },
-      );
-      if (transpileCmd.error) {
-        console.error(transpileCmd.error);
-        process.exit(1);
-      }
-
-      try {
-        console.log('🖼️  Copying assets...');
-        execSync('cp -R src/theme/assets/images js/src/theme/assets/images');
-
-        console.log('♻️  Replacing source...');
-        execSync('rm -rf src', { stdio: 'pipe' });
-        execSync('cp -R js/src ./src', { stdio: 'pipe' });
-        execSync('rm -rf __mocks__', { stdio: 'pipe' });
-        execSync('cp -R js/__mocks__ ./__mocks__', { stdio: 'pipe' });
-        execSync('rm -rf js', { stdio: 'pipe' });
-      } catch(error) {
-        console.log(error)
-        console.error('🚨 Failed to copy assets or replace source. Use Git Bash on Windows.');
-        process.exit(1);
-      }
-
-      console.log('🌀 Cleaning up type definitions...');
-      execSync('rm -rf src/theme/types', { stdio: 'pipe' });
-      execSync('rm -f src/navigation/paths.js', { stdio: 'pipe' });
-      execSync('rm -f src/navigation/types.js', { stdio: 'pipe' });
 
       resolve();
     });
