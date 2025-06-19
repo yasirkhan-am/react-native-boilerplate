@@ -89,8 +89,7 @@ module.exports = {
       console.log("🚀 ~ Using package manager:", packageManager);
 
       if (!value) {
-        console.log('\n📦 Loading the build tool...');
-
+        console.log('\n📦 Installing TypeScript...');
         const installTypeScriptCmd = spawnSync(
           packageManager,
           [addCmd, '-D', `typescript@${TYPESCRIPT_VERSION}`],
@@ -102,7 +101,7 @@ module.exports = {
           process.exit(1);
         }
 
-        console.log('🧱 Building the javascript source...');
+        console.log('🧱 Transpiling TypeScript...');
         const transpileCmd = spawnSync(
           getNpxCommand(),
           ['tsc', '--project', 'plugins/compile-js/tsconfig.build.json'],
@@ -115,33 +114,34 @@ module.exports = {
         }
 
         try {
-          console.log('🖼️  Copying assets...');
-          copyDirRecursive('src/theme/assets/images', 'js/src/theme/assets/images');
-
-          console.log('♻️  Replacing source...');
+          console.log('♻️  Replacing src with transpiled JS...');
           deleteDirRecursive('src');
           copyDirRecursive('js/src', './src');
 
-          deleteDirRecursive('__mocks__');
-          copyDirRecursive('js/__mocks__', './__mocks__');
+          console.log('📦 Copying __mocks__ if available...');
+          if (fs.existsSync('js/__mocks__')) {
+            deleteDirRecursive('__mocks__');
+            copyDirRecursive('js/__mocks__', './__mocks__');
+          } else {
+            console.warn('⚠️  No js/__mocks__ directory found to copy.');
+          }
 
+          console.log('🧹 Cleaning up js/');
           deleteDirRecursive('js');
+
+          console.log('🌀 Removing legacy types...');
+          deleteDirRecursive('src/theme/types');
+          try {
+            fs.unlinkSync('src/navigation/paths.js');
+          } catch {}
+          try {
+            fs.unlinkSync('src/navigation/types.js');
+          } catch {}
         } catch (err) {
-          console.error(
-            '🚨 Failed to copy assets or replace source. If you are using Windows, please use Git Bash.',
-          );
+          console.error('🚨 Error during file operations.');
           console.error(err);
           process.exit(1);
         }
-
-        console.log('🌀 Removing types ...');
-        deleteDirRecursive('src/theme/types');
-        try {
-          fs.unlinkSync('src/navigation/paths.js');
-        } catch {}
-        try {
-          fs.unlinkSync('src/navigation/types.js');
-        } catch {}
       }
 
       resolve();
