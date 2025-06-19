@@ -28,7 +28,7 @@ function isNpmAvailable() {
 }
 
 module.exports = {
-  async apply(!value) {
+  async apply(value) {
     return new Promise((resolve) => {
       let packageManager = null;
       let addCmd = null;
@@ -49,7 +49,7 @@ module.exports = {
         process.exit(1);
       }
 
-      if (value) {
+      if (!value) {
         console.log('\n');
 
         console.log('📦 Loading the build tool...');
@@ -59,7 +59,7 @@ module.exports = {
           { stdio: 'inherit' },
         );
         if (installTypeScriptCmd.error) {
-          console.error(installTypeScriptCmd.error);s
+          console.error(installTypeScriptCmd.error);
           process.exit(1);
         }
 
