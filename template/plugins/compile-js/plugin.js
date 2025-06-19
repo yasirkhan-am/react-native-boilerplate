@@ -2,6 +2,8 @@
 /* eslint-disable no-console */
 const { execSync, spawnSync } = require('node:child_process');
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
 
 const isWindows = os.platform() === 'win32';
 const TYPESCRIPT_VERSION = '5.6.3';
@@ -32,13 +34,36 @@ function getNpxCommand() {
   return isWindows ? 'npx.cmd' : 'npx';
 }
 
+function ensureDirExists(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+}
+
+function copyDirRecursive(src, dest) {
+  if (!fs.existsSync(src)) return;
+  if (!fs.existsSync(dest)) ensureDirExists(dest);
+
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (let entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDirRecursive(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
 module.exports = {
   async apply(value) {
     return new Promise((resolve) => {
       let packageManager = null;
       let addCmd = null;
 
-      // Detect preferred package manager
       if (isYarnAvailable()) {
         packageManager = isWindows ? 'yarn.cmd' : 'yarn';
         addCmd = 'add';
@@ -82,7 +107,9 @@ module.exports = {
 
         try {
           console.log('🖼️  Copying assets...');
-          execSync('cp -R src/theme/assets/images js/src/theme/assets/images');
+          const sourceAssets = path.join('src', 'theme', 'assets', 'images');
+          const targetAssets = path.join('js', 'src', 'theme', 'assets', 'images');
+          copyDirRecursive(sourceAssets, targetAssets);
 
           console.log('♻️  Replacing source...');
           execSync('rm -rf src', { stdio: 'pipe' });
