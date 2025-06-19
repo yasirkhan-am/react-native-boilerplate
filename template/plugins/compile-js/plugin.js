@@ -103,7 +103,8 @@ module.exports = {
         execSync('rm -rf __mocks__', { stdio: 'pipe' });
         execSync('cp -R js/__mocks__ ./__mocks__', { stdio: 'pipe' });
         execSync('rm -rf js', { stdio: 'pipe' });
-      } catch {
+      } catch(error) {
+        console.log(error)
         console.error('🚨 Failed to copy assets or replace source. Use Git Bash on Windows.');
         process.exit(1);
       }
