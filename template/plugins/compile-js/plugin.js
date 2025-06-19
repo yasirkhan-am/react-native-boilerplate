@@ -34,10 +34,7 @@ module.exports = {
       let addCmd = null;
 
       // react-native cli prefer yarn so we follow the same logic
-      if (isYarnAvailable()) {
-        packageManager = 'yarn';
-        addCmd = 'add';
-      } else if (isNpmAvailable()) {
+      if(isNpmAvailable()) {
         packageManager = 'npm';
         addCmd = 'install';
       }
@@ -53,26 +50,26 @@ module.exports = {
         console.log('\n');
 
         console.log('📦 Loading the build tool...');
-        // const installTypeScriptCmd = spawnSync(
-        //   packageManager,
-        //   [addCmd, '-D', `typescript@${TYPESCRIPT_VERSION}`],
-        //   { stdio: 'inherit' },
-        // );
-        // if (installTypeScriptCmd.error) {
-        //   console.error(installTypeScriptCmd.error);
-        //   process.exit(1);
-        // }
+        const installTypeScriptCmd = spawnSync(
+          packageManager,
+          [addCmd, '-D', `typescript@${TYPESCRIPT_VERSION}`],
+          { stdio: 'inherit' },
+        );
+        if (installTypeScriptCmd.error) {
+          console.error(installTypeScriptCmd.error);
+          process.exit(1);
+        }
 
         console.log('🧱 Building the javascript source...');
-        // const transpileCmd = spawnSync(
-        //   'npx',
-        //   ['tsc', '--project', `plugins/compile-js/tsconfig.build.json`],
-        //   { stdio: 'inherit' },
-        // );
-        // if (transpileCmd.error) {
-        //   console.error(transpileCmd.error);
-        //   process.exit(1);
-        // }
+        const transpileCmd = spawnSync(
+          'npx',
+          ['tsc', '--project', `plugins/compile-js/tsconfig.build.json`],
+          { stdio: 'inherit' },
+        );
+        if (transpileCmd.error) {
+          console.error(transpileCmd.error);
+          process.exit(1);
+        }
 
         try {
           console.log('🖼️  Copying assets...');
