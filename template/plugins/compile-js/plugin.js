@@ -64,15 +64,15 @@ module.exports = {
         // }
 
         console.log('🧱 Building the javascript source...');
-        const transpileCmd = spawnSync(
-          'npx',
-          ['tsc', '--project', `plugins/compile-js/tsconfig.build.json`],
-          { stdio: 'inherit' },
-        );
-        if (transpileCmd.error) {
-          console.error(transpileCmd.error);
-          process.exit(1);
-        }
+        // const transpileCmd = spawnSync(
+        //   'npx',
+        //   ['tsc', '--project', `plugins/compile-js/tsconfig.build.json`],
+        //   { stdio: 'inherit' },
+        // );
+        // if (transpileCmd.error) {
+        //   console.error(transpileCmd.error);
+        //   process.exit(1);
+        // }
 
         try {
           console.log('🖼️  Copying assets...');
