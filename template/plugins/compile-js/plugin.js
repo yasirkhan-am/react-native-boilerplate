@@ -53,15 +53,15 @@ module.exports = {
         console.log('\n');
 
         console.log('📦 Loading the build tool...');
-        const installTypeScriptCmd = spawnSync(
-          packageManager,
-          [addCmd, '-D', `typescript@${TYPESCRIPT_VERSION}`],
-          { stdio: 'inherit' },
-        );
-        if (installTypeScriptCmd.error) {
-          console.error(installTypeScriptCmd.error);
-          process.exit(1);
-        }
+        // const installTypeScriptCmd = spawnSync(
+        //   packageManager,
+        //   [addCmd, '-D', `typescript@${TYPESCRIPT_VERSION}`],
+        //   { stdio: 'inherit' },
+        // );
+        // if (installTypeScriptCmd.error) {
+        //   console.error(installTypeScriptCmd.error);
+        //   process.exit(1);
+        // }
 
         console.log('🧱 Building the javascript source...');
         const transpileCmd = spawnSync(
